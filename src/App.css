@@ -1,0 +1,12 @@
+body {
+    contain: strict;
+    margin: 0;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+}
+
+* {
+    -webkit-user-drag: none;
+    -webkit-user-select: none;
+}
