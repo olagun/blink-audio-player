@@ -26,10 +26,11 @@
     z-index: 2;
 }
 
-.img {
+.thumbnail {
     border-radius: 50%;
     width: 10rem;
     height: 10rem;
+    transform: scale(0);
 }
 
 .name {

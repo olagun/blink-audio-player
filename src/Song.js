@@ -1,170 +1,122 @@
 'use strict';
 
-import DampedSpring from './vendor/damped-spring.min';
+import rebound from 'rebound';
+
 import Dropzone from './Dropzone';
 import style from './Song.css';
+import base64 from './utils/base64';
 
 /** @protected */
 const BLUR = 60;
+const springSystem = new rebound.SpringSystem();
 
 /** @protected */
-let canvas,
-    ctx,
-    list = [];
+// Create auxillary canvas only once
+let canvas = document.createElement('canvas');;
+let ctx = canvas.getContext('2d');
+canvas.classList.add(style.canvas);
+document.body.insertAdjacentElement('afterbegin', canvas);
 
 /**
- * @constructor                 Song
- * @description                 Song class
- * @returns     {HTMLElement}   Song container element
+ * Song class
+ * @param file Blob containing the audio information
+ * @param {Object} metadata Metadata object returned by the media module.
+ * @return {HTMLElement} Song container element.
  */
-export default class Song {
-    static get list() {
-        'use strict';
-        return list;
-    }
+function Song(file, metadata) {
+    'use strict';
 
-    constructor(file, metadata) {
-        'use strict';
+    this.file = file;
+    this.metadata = metadata;
 
-        this.file = file;
+    this.title = this.metadata.tags.title;
+    this.imageData = this.metadata.tags.picture.data;
+    this.imageType = this.metadata.tags.picture.type;
 
-        this.spring = new DampedSpring({
-            stiffness: 0.1,
-            damping: .4
+    this.element = document.createElement('div');
+    this.element.classList.add(style.song);
+
+    if (this.imageData) {
+        // Create and mount thumbnail
+        this.thumbnail = new Image();
+        this.thumbnail.classList.add(style.thumbnail);
+        this.thumbnail.src = `data:image/${this.imageType};base64,${base64(data)}`;
+        this.element.insertAdjacentElement('afterbegin', this.thumbnail);
+
+        // Create thumbnail spring instance
+        this.spring = springSystem.createSpring(50, 3);
+        this.spring.addListener({
+            onSpringUpdate: spring => {
+                let value = spring.getCurrentValue();
+                this.thumbnail.style.transform = `scale(${value})`;
+            }
         });
 
-        this.element = document.createElement('div');
-        this.element.classList.add(style.song);
+        // Immediately animate spring
+        this.spring.setEndValue(1);
 
-        const {
-            tags: {
-                title: title,
-                picture: {
-                    data: data,
-                    type: type
-                }
-            }
-        } = metadata;
-
-        this.title = title;
-        this.data = data;
-        this.type = type;
-
-        this.addPreloader();
-
-        if (data) {
-            const base64 = data.reduce((acc, curr) =>
-                acc + String.fromCharCode(curr), '');
-
-            this.image = new Image();
-            this.image.classList.add(style.img);
-            this.image.src = `data:image/${type};base64,${btoa(base64)}`;
-            this.element.insertAdjacentElement('afterbegin', this.image);
-
-            if (!canvas) {
-                canvas = document.createElement('canvas');
-                canvas.classList.add(style.canvas);
-                ctx = canvas.getContext('2d');
-                document.body.insertAdjacentElement('afterbegin', canvas);
-            }
-
-            this.blurredImage = new Image(); // .cloneNode()?
-            this.blurredImage.src = this.image.src;
-            this.blurredImage.addEventListener('load', this.handleImageLoad.bind(this), {
-                once: true
-            });
-        }
-
-        list.push(this.element);
-        return this.element;
+        // Performantly display blurred image
+        this.blurredImage = new Image();
+        this.blurredImage.src = this.thumbnail.src;
+        this.blurredImage.addEventListener('load', this._handleImageLoad.bind(this), {
+            once: true
+        });
     }
 
-    handlePlayback() {
-        'use strict';
+    return this.element;
+};
+/**
+ * @protected
+ */
+Song.prototype._handlePlayback = function() {
+    'use strict';
 
-        if (this.audio.paused) {
-            this.audio.play();
-
-            this.spring(x => {
-                this.element.style.transform = `scale(${x})`;
-            }, .4, 1);
-        } else {
-            this.audio.pause();
-
-            this.spring(x => {
-                this.element.style.transform = `scale(${x})`;
-            }, 1, .4);
-        }
-    }
-
-    /**
-     * @description Uses the newly created image to creates a new blurred image
-     *              and mounts it to the DOM. This is much more efficient hard
-     *              ware wise than using CSS filters.
-     */
-    handleImageLoad() {
-        'use strict';
-
-        const {
-            width: canvasWidth,
-            height: canvasHeight
-        } = canvas;
-
-        const image = this.blurredImage,
-            scaledWidth = canvasWidth,
-            scale = scaledWidth / image.width,
-            scaledHeight = image.height * scale;
-
-        ctx.filter = `blur(${BLUR}px)`;
-        ctx.drawImage(image, 0, 0, scaledWidth, scaledHeight);
-
-
-        image.src = canvas.toDataURL('image/png');
-        image.classList.add(style.bg);
-        this.audio = new Audio(URL.createObjectURL(this.file));
-        this.element.addEventListener('click', this.handlePlayback.bind(this));
+    if (this.audio.paused) {
         this.audio.play();
-
-        this.removePreloader();
-        Dropzone.insertAdjacentElement('afterbegin', image);
-
-        this.element.insertAdjacentHTML('beforeend', `<p class="${style.name}">${this.title}</p>`);
-        this.element.insertAdjacentElement('beforeend', this.createVolumeScrubber());
-
-        this.element.insertAdjacentElement('beforeend', this.volumeScrubber);
-
-        // Reset canvas
-        ctx.filter = 'none';
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        this.spring.setEndValue(1);
+    } else {
+        this.audio.pause();
+        this.spring.setEndValue(.6);
     }
+};
 
-    get volume() { return this.audio.volume; };
+/**
+ * Uses the newly created image to creates a new blurred image
+ * and mounts it to the DOM. This is much more efficient hard
+ * ware wise than using CSS filters.
+ * 
+ * @protected
+ */
+Song.prototype._handleImageLoad = function() {
+    'use strict';
 
-    set volume(volume) { this.audio.volume = volume; };
+    const {
+        width: canvasWidth,
+        height: canvasHeight
+    } = canvas;
 
-    createVolumeScrubber() {
-        'use strict';
+    const image = this.blurredImage,
+        scaledWidth = canvasWidth,
+        scale = scaledWidth / image.width,
+        scaledHeight = image.height * scale;
 
-        this.volumeScrubber = document.createElement('input');
-        this.volumeScrubber.setAttribute('type', 'range');
-        this.volumeScrubber.classList.add(style.volumeScrubber);
-        this.volumeScrubber.value = this.volume;
+    ctx.filter = `blur(${BLUR}px)`;
+    ctx.drawImage(image, 0, 0, scaledWidth, scaledHeight);
 
-        this.volumeScrubber.addEventListener('value', this.handleVolumeScrub.bind(this));
 
-        return this.volumeScrubber;
-    };
+    image.src = canvas.toDataURL('image/png');
+    image.classList.add(style.bg);
+    this.audio = new Audio(URL.createObjectURL(this.file));
+    this.element.addEventListener('click', this._handlePlayback.bind(this));
+    this.audio.play();
 
-    handleVolumeScrub(e) {
-        console.log(e);
-        this.volume = e.target.value;
-    };
+    Dropzone.insertAdjacentElement('afterbegin', image);
 
-    addPreloader() {
+    this.element.insertAdjacentHTML('beforeend', `<p class="${style.name}">${this.title}</p>`);
 
-    }
+    // Reset canvas
+    ctx.filter = 'none';
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+};
 
-    removePreloader() {
-
-    }
-}
+export default Song;

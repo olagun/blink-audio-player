@@ -7,7 +7,7 @@ const path = require('path'),
 module.exports = {
     entry: path.resolve(__dirname, 'src/App.js'),
     output: {
-        path: path.resolve('build/static/js'),
+        path: path.resolve('public/js'),
         filename: 'bundle.js'
     },
     module: {
@@ -29,13 +29,13 @@ module.exports = {
     },
     plugins: [
         new HTMLWebpackPlugin({
-            template: path.resolve(__dirname, 'public/index.html'),
-            filename: path.resolve(__dirname, 'build/index.html')
+            template: path.resolve(__dirname, 'src/index.html'),
+            filename: path.resolve(__dirname, 'public/index.html')
         })
     ],
     devServer: {
         port: 3000,
-        contentBase: path.resolve(__dirname, 'build'),
+        contentBase: path.resolve(__dirname, 'public'),
         compress: true
     }
 };
