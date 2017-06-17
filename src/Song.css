@@ -1,6 +1,16 @@
-/* Layer 0  (Local)*/
+/* Triggers layout, compositing, and paint; oh well */
+
+@-webkit-keyframes flex-grow {
+    to {
+        flex-basis: 100vw;
+    }
+}
+
+
+/* Layer 0 (Local) */
 
 .song {
+    will-change: flex-basis;
     z-index: 0;
     contain: strict;
     position: relative;
@@ -8,10 +18,12 @@
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    flex: 0 1 100vw;
+    flex: 0 1;
+    flex-basis: 1px;
     min-width: 400px;
     height: 100vh;
     overflow: hidden;
+    animation: flex-grow ease .2s forwards;
 }
 
 
@@ -38,13 +50,16 @@
 }
 
 .metadata {
+    margin-top: 32px;
     display: block;
 }
 
 .title,
 .artist {
+    line-height: 1.4;
+    margin: 0;
     color: white;
-    font-weight: bold;
+    font-weight: 600;
     text-shadow: 1px 0px 2px black;
     text-align: center;
 }

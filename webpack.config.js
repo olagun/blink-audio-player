@@ -1,13 +1,14 @@
 'use strict';
 
-const path = require('path'),
-    UglifyJsPlugin = require('uglifyjs-webpack-plugin'),
-    HTMLWebpackPlugin = require('html-webpack-plugin');
+const path = require('path');
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const HTMLWebpackPlugin = require('html-webpack-plugin');
+const webpack = require('webpack');
 
 module.exports = {
     entry: path.resolve(__dirname, 'src/App.js'),
     output: {
-        path: path.resolve('public/js'),
+        path: path.resolve('build/static/js'),
         filename: 'bundle.js'
     },
     module: {
@@ -15,7 +16,7 @@ module.exports = {
             test: /\.js$/,
             loader: 'babel-loader',
             include: [
-                /src/
+                path.resolve(__dirname, 'src')
             ],
         }, {
             test: /\.css$/,
@@ -29,13 +30,13 @@ module.exports = {
     },
     plugins: [
         new HTMLWebpackPlugin({
-            template: path.resolve(__dirname, 'src/index.html'),
-            filename: path.resolve(__dirname, 'public/index.html')
+            template: path.resolve(__dirname, 'public/index.html'),
+            filename: path.resolve(__dirname, 'build/index.html')
         })
     ],
     devServer: {
         port: 3000,
-        contentBase: path.resolve(__dirname, 'public'),
+        contentBase: path.resolve(__dirname, 'build'),
         compress: true
     }
 };

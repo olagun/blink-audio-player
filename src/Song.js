@@ -22,6 +22,10 @@ Song.prototype.ctx = _ctx = _canvas.getContext('2d');
 style(_canvas, styles.canvas);
 prepend(document.body, _canvas);
 
+
+Song.currentSong = undefined;
+Song.songList = [];
+
 Song.prototype.resetCanvas = function() {
     this.ctx.filter = 'none';
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -116,8 +120,6 @@ function Song(file, metadata) {
             });
         }
     }
-
-    return this.element;
 };
 /**
  * Handle the playback asychronously as not
@@ -162,7 +164,7 @@ Song.prototype.hideMetadata = function() {
 Song.prototype._handleImageLoad = function() {
     'use strict';
 
-    const { width: canvasWidth, height: canvasHeight } = this.canvas;
+    const { width: canvasWidth } = this.canvas;
 
     // Find scaled image sizes
     const scaledWidth = canvasWidth;
@@ -180,9 +182,8 @@ Song.prototype._handleImageLoad = function() {
 
     // Play audio
     this.audio = new Audio(URL.createObjectURL(this.file));
-    this.element.addEventListener('click', this._handlePlayback.bind(this));
+    this.thumbnail.addEventListener('click', this._handlePlayback.bind(this));
     this.audio.play();
-
 
     prepend(this.element, this.blurredImage);
 
@@ -212,7 +213,6 @@ Song.prototype._handleImageLoad = function() {
         append(this.element, meta);
         this.showMetadata();
     }
-
 
     // Perf
     this.resetCanvas();

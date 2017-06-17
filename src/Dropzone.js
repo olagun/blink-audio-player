@@ -35,10 +35,12 @@ Dropzone.prototype._handleDragOver = function(e) {
 
     e.preventDefault();
     e.stopPropagation();
+
+    // TODO: Add shadow
 };
 
 /**
- * _handles audio file drop.
+ * Handles audio file drop.
  * @param   {Object} e Drop Event 
  */
 Dropzone.prototype._handleDrop = async function(e) {
@@ -47,14 +49,11 @@ Dropzone.prototype._handleDrop = async function(e) {
     e.preventDefault();
     e.stopPropagation();
 
-    let inputFile;
     let data = e.dataTransfer.items;
 
     if (data) {
-        // Only parse one entry at a time
-        inputFile = data[0].webkitGetAsEntry();
+        let inputFile = data[0].webkitGetAsEntry();
 
-        // Await inputFile
         inputFile = await new Promise((resolve, reject) => {
             inputFile.file(file =>
                 file.type.slice(0, 5) === 'audio' ?
@@ -62,14 +61,19 @@ Dropzone.prototype._handleDrop = async function(e) {
                 undefined
             );
         });
-    }
 
-    if (inputFile) {
-        read(inputFile, {
-            onSuccess: metadata => {
-                append(this.element, new Song(inputFile, metadata));
-            }
-        });
+        if (inputFile) {
+            read(inputFile, {
+                onSuccess: metadata => {
+                    append(this.element, (() => {
+                        const song = new Song(inputFile, metadata);
+                        Song.currentSong = song.title;
+                        Song.songList.push(song);
+                        return song.element;
+                    })());
+                }
+            });
+        }
     }
 };
 
