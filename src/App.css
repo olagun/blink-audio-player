@@ -1,12 +1,17 @@
 body {
     contain: strict;
-    margin: 0;
-    overflow: hidden;
+    z-index: 0;
     width: 100vw;
     height: 100vh;
+    margin: 0;
+    overflow: hidden;
+    background-color: black;
+    transform: translate3d(0, 0, 0);
 }
 
 * {
+    font-family: BlinkMacSystemFont;
+    letter-spacing: .01rem;
     -webkit-user-drag: none;
     -webkit-user-select: none;
 }

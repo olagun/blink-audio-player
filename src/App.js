@@ -1,6 +1,7 @@
 'use strict';
 
 import Dropzone from './Dropzone';
+import append from './utils/append';
 import './App.css';
 
-document.body.insertAdjacentElement('afterbegin', Dropzone);
+append(document.body, Dropzone);

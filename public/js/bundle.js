@@ -518,30 +518,42 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _Dropzone = __webpack_require__(16);
-
-var _Dropzone2 = _interopRequireDefault(_Dropzone);
-
 var _jsmediatags = __webpack_require__(7);
+
+var _append = __webpack_require__(26);
+
+var _append2 = _interopRequireDefault(_append);
+
+var _create = __webpack_require__(27);
+
+var _create2 = _interopRequireDefault(_create);
+
+var _style = __webpack_require__(28);
+
+var _style2 = _interopRequireDefault(_style);
 
 var _Song = __webpack_require__(5);
 
 var _Song2 = _interopRequireDefault(_Song);
 
+var _Dropzone = __webpack_require__(16);
+
+var _Dropzone2 = _interopRequireDefault(_Dropzone);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Audio file dropzone area.
- * @returns {HTMLElement}   Song container element
+ * @return {HTMLElement}   Song container element
  */
 function Dropzone() {
     'use strict';
 
-    this.element = document.createElement('div');
-    this.element.classList.add(_Dropzone2.default.dropzone);
+    this.element = (0, _create2.default)('div');
+    (0, _style2.default)(this.element, _Dropzone2.default.dropzone);
 
-    this.element.addEventListener('dragover', this.handleDragOver.bind(this));
-    this.element.addEventListener('drop', this.handleDrop.bind(this));
+    this.element.addEventListener('dragover', this._handleDragOver.bind(this));
+    this.element.addEventListener('drop', this._handleDrop.bind(this));
 
     return this.element;
 };
@@ -551,7 +563,7 @@ function Dropzone() {
  * 
  * @param   {Object} e Drag Over Event
  */
-Dropzone.prototype.handleDragOver = function (e) {
+Dropzone.prototype._handleDragOver = function (e) {
     'use strict';
 
     e.preventDefault();
@@ -559,10 +571,10 @@ Dropzone.prototype.handleDragOver = function (e) {
 };
 
 /**
- * Handles audio file drop.
+ * _handles audio file drop.
  * @param   {Object} e Drop Event 
  */
-Dropzone.prototype.handleDrop = async function (e) {
+Dropzone.prototype._handleDrop = async function (e) {
     'use strict';
 
     var _this = this;
@@ -570,12 +582,14 @@ Dropzone.prototype.handleDrop = async function (e) {
     e.preventDefault();
     e.stopPropagation();
 
-    var inputFile = void 0,
-        data = e.dataTransfer.items;
+    var inputFile = void 0;
+    var data = e.dataTransfer.items;
 
     if (data) {
+        // Only parse one entry at a time
         inputFile = data[0].webkitGetAsEntry();
 
+        // Await inputFile
         inputFile = await new Promise(function (resolve, reject) {
             inputFile.file(function (file) {
                 return file.type.slice(0, 5) === 'audio' ? resolve(file) : undefined;
@@ -586,7 +600,7 @@ Dropzone.prototype.handleDrop = async function (e) {
     if (inputFile) {
         (0, _jsmediatags.read)(inputFile, {
             onSuccess: function onSuccess(metadata) {
-                _this.element.insertAdjacentElement('beforeend', new _Song2.default(inputFile, metadata));
+                (0, _append2.default)(_this.element, new _Song2.default(inputFile, metadata));
             }
         });
     }
@@ -636,11 +650,15 @@ var _Dropzone = __webpack_require__(2);
 
 var _Dropzone2 = _interopRequireDefault(_Dropzone);
 
+var _append = __webpack_require__(26);
+
+var _append2 = _interopRequireDefault(_append);
+
 __webpack_require__(3);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-document.body.insertAdjacentElement('afterbegin', _Dropzone2.default);
+(0, _append2.default)(document.body, _Dropzone2.default);
 
 /***/ }),
 /* 5 */
@@ -657,6 +675,26 @@ var _rebound = __webpack_require__(21);
 
 var _rebound2 = _interopRequireDefault(_rebound);
 
+var _base = __webpack_require__(24);
+
+var _base2 = _interopRequireDefault(_base);
+
+var _prepend = __webpack_require__(25);
+
+var _prepend2 = _interopRequireDefault(_prepend);
+
+var _append = __webpack_require__(26);
+
+var _append2 = _interopRequireDefault(_append);
+
+var _create = __webpack_require__(27);
+
+var _create2 = _interopRequireDefault(_create);
+
+var _style = __webpack_require__(28);
+
+var _style2 = _interopRequireDefault(_style);
+
 var _Dropzone = __webpack_require__(2);
 
 var _Dropzone2 = _interopRequireDefault(_Dropzone);
@@ -665,26 +703,30 @@ var _Song = __webpack_require__(17);
 
 var _Song2 = _interopRequireDefault(_Song);
 
-var _base = __webpack_require__(24);
-
-var _base2 = _interopRequireDefault(_base);
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/** @protected */
-var BLUR = 60;
-var springSystem = new _rebound2.default.SpringSystem();
+var _canvas = void 0,
+    _ctx = void 0;
 
-/** @protected */
-// Create auxillary canvas only once
-var canvas = document.createElement('canvas');;
-var ctx = canvas.getContext('2d');
-canvas.classList.add(_Song2.default.canvas);
-document.body.insertAdjacentElement('afterbegin', canvas);
+Song.prototype.springSystem = new _rebound2.default.SpringSystem();
+Song.prototype.blur = 2;
+Song.prototype.brightness = 30;
+Song.prototype.quality = .7;
+Song.prototype.canvas = _canvas = document.createElement('canvas');
+Song.prototype.ctx = _ctx = _canvas.getContext('2d');
+
+(0, _style2.default)(_canvas, _Song2.default.canvas);
+(0, _prepend2.default)(document.body, _canvas);
+
+Song.prototype.resetCanvas = function () {
+    this.ctx.filter = 'none';
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+};
 
 /**
- * Song class
- * @param file Blob containing the audio information
+ * Constructor for mounting and creating song elements.
+ * 
+ * @param file Blob containing the audio information.
  * @param {Object} metadata Metadata object returned by the media module.
  * @return {HTMLElement} Song container element.
  */
@@ -696,31 +738,38 @@ function Song(file, metadata) {
     this.file = file;
     this.metadata = metadata;
 
+    console.log(metadata);
+
     this.title = this.metadata.tags.title;
+    this.artist = this.metadata.tags.artist;
     this.imageData = this.metadata.tags.picture.data;
     this.imageType = this.metadata.tags.picture.type;
 
-    this.element = document.createElement('div');
-    this.element.classList.add(_Song2.default.song);
+    this.element = (0, _create2.default)('div');
+    (0, _style2.default)(this.element, _Song2.default.song);
+    (0, _append2.default)(_Dropzone2.default, this.element);
+
+    this.metaElements = [];
 
     if (this.imageData) {
         // Create and mount thumbnail
         this.thumbnail = new Image();
-        this.thumbnail.classList.add(_Song2.default.thumbnail);
-        this.thumbnail.src = 'data:image/' + this.imageType + ';base64,' + (0, _base2.default)(data);
-        this.element.insertAdjacentElement('afterbegin', this.thumbnail);
+        (0, _style2.default)(this.thumbnail, _Song2.default.thumbnail);
+        this.thumbnail.src = 'data:image/' + this.imageType + ';base64,' + (0, _base2.default)(this.imageData);
+        (0, _prepend2.default)(this.element, this.thumbnail);
 
         // Create thumbnail spring instance
-        this.spring = springSystem.createSpring(50, 3);
-        this.spring.addListener({
-            onSpringUpdate: function onSpringUpdate(spring) {
+        this.thumbnailSpring = this.springSystem.createSpring(50, 3);
+        this.thumbnailSpring.addListener({
+            // Async for perf
+            onSpringUpdate: async function onSpringUpdate(spring) {
                 var value = spring.getCurrentValue();
                 _this.thumbnail.style.transform = 'scale(' + value + ')';
             }
         });
 
         // Immediately animate spring
-        this.spring.setEndValue(1);
+        this.thumbnailSpring.setEndValue(1);
 
         // Performantly display blurred image
         this.blurredImage = new Image();
@@ -728,23 +777,77 @@ function Song(file, metadata) {
         this.blurredImage.addEventListener('load', this._handleImageLoad.bind(this), {
             once: true
         });
+
+        // Create bg spring instance
+        this.bgSpring = this.springSystem.createSpring(2, 8);
+        this.bgSpring.addListener({
+            onSpringUpdate: async function onSpringUpdate(spring) {
+                var value = spring.getCurrentValue();
+                _this.blurredImage.style.transform = 'scale(' + value + ')';
+            }
+        });
+
+        // Metadata Springs
+        {
+            this.metaOpacitySpring = this.springSystem.createSpring(2, 8);
+            this.metaOpacitySpring.addListener({
+                onSpringUpdate: async function onSpringUpdate(spring) {
+                    for (var i = 0; i in _this.metaElements; i++) {
+                        var metaElement = _this.metaElements[i];
+
+                        // TODO: Delay opacity change
+                        metaElement.style.opacity = '' + spring.getCurrentValue();
+                    }
+                }
+            });
+
+            this.metaTransformSpring = this.springSystem.createSpring(2, 8);
+            this.metaTransformSpring.addListener({
+                onSpringUpdate: async function onSpringUpdate(spring) {
+                    for (var i = 0; i in _this.metaElements; i++) {
+                        var metaElement = _this.metaElements[i];
+
+                        // TODO: Delay transform
+                        metaElement.style.transform = 'translateY(' + spring.getCurrentValue() + 'px)';
+                    }
+                }
+            });
+        }
     }
 
     return this.element;
 };
 /**
+ * Handle the playback asychronously as not
+ * to block any other operations or animations.
+ * 
  * @protected
  */
-Song.prototype._handlePlayback = function () {
+Song.prototype._handlePlayback = async function () {
     'use strict';
 
     if (this.audio.paused) {
         this.audio.play();
-        this.spring.setEndValue(1);
+        this.showMetadata();
+
+        this.thumbnailSpring.setEndValue(1);
+        this.bgSpring.setEndValue(1.2);
     } else {
         this.audio.pause();
-        this.spring.setEndValue(.6);
+        this.hideMetadata();
+        this.thumbnailSpring.setEndValue(.8);
+        this.bgSpring.setEndValue(1);
     }
+};
+
+Song.prototype.showMetadata = function () {
+    this.metaTransformSpring.setEndValue(0);
+    this.metaOpacitySpring.setEndValue(1);
+};
+
+Song.prototype.hideMetadata = function () {
+    this.metaTransformSpring.setEndValue(30);
+    this.metaOpacitySpring.setEndValue(0);
 };
 
 /**
@@ -757,31 +860,61 @@ Song.prototype._handlePlayback = function () {
 Song.prototype._handleImageLoad = function () {
     'use strict';
 
-    var canvasWidth = canvas.width,
-        canvasHeight = canvas.height;
+    var _canvas2 = this.canvas,
+        canvasWidth = _canvas2.width,
+        canvasHeight = _canvas2.height;
 
+    // Find scaled image sizes
 
-    var image = this.blurredImage,
-        scaledWidth = canvasWidth,
-        scale = scaledWidth / image.width,
-        scaledHeight = image.height * scale;
+    var scaledWidth = canvasWidth;
+    var scale = scaledWidth / this.blurredImage.width;
+    var scaledHeight = this.blurredImage.height * scale;
 
-    ctx.filter = 'blur(' + BLUR + 'px)';
-    ctx.drawImage(image, 0, 0, scaledWidth, scaledHeight);
+    // Blur canvas and draw image
+    this.ctx.filter = 'blur(' + this.blur + 'px) brightness(' + this.brightness + '%)';
+    this.ctx.drawImage(this.blurredImage, 0, 0, scaledWidth, scaledHeight);
 
-    image.src = canvas.toDataURL('image/png');
-    image.classList.add(_Song2.default.bg);
+    // Set blurredImage src
+    this.blurredImage.src = this.canvas.toDataURL('image/png', this.quality);
+    (0, _style2.default)(this.blurredImage, _Song2.default.bg);
+    this.bgSpring.setEndValue(1.2);
+
+    // Play audio
     this.audio = new Audio(URL.createObjectURL(this.file));
     this.element.addEventListener('click', this._handlePlayback.bind(this));
     this.audio.play();
 
-    _Dropzone2.default.insertAdjacentElement('afterbegin', image);
+    (0, _prepend2.default)(this.element, this.blurredImage);
 
-    this.element.insertAdjacentHTML('beforeend', '<p class="' + _Song2.default.name + '">' + this.title + '</p>');
+    // Create and add metadata elements
+    {
+        var meta = (0, _create2.default)('div');
+        (0, _style2.default)(meta, _Song2.default.metadata);
 
-    // Reset canvas
-    ctx.filter = 'none';
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        // TODO: Safety check
+
+        // Create title
+        var title = (0, _create2.default)('p');
+        var artist = (0, _create2.default)('p');
+
+        (0, _append2.default)(title, this.title);
+        (0, _append2.default)(artist, this.artist);
+
+        (0, _style2.default)(title, _Song2.default.title);
+        (0, _style2.default)(artist, _Song2.default.artist);
+
+        this.metaElements.push(title);
+        this.metaElements.push(artist);
+
+        (0, _append2.default)(meta, title);
+        (0, _append2.default)(meta, artist);
+
+        (0, _append2.default)(this.element, meta);
+        this.showMetadata();
+    }
+
+    // Perf
+    this.resetCanvas();
 };
 
 exports.default = Song;
@@ -5527,7 +5660,7 @@ exports = module.exports = __webpack_require__(0)(undefined);
 
 
 // module
-exports.push([module.i, "body {\n    contain: strict;\n    margin: 0;\n    overflow: hidden;\n    width: 100vw;\n    height: 100vh;\n}\n\n* {\n    -webkit-user-drag: none;\n    -webkit-user-select: none;\n}", ""]);
+exports.push([module.i, "body {\n    contain: strict;\n    z-index: 0;\n    width: 100vw;\n    height: 100vh;\n    margin: 0;\n    overflow: hidden;\n    background-color: black;\n    transform: translate3d(0, 0, 0);\n}\n\n* {\n    font-family: BlinkMacSystemFont;\n    letter-spacing: .01rem;\n    -webkit-user-drag: none;\n    -webkit-user-select: none;\n}", ""]);
 
 // exports
 
@@ -5541,7 +5674,7 @@ exports = module.exports = __webpack_require__(0)(undefined);
 
 
 // module
-exports.push([module.i, "._2alszQVyoeYm5cMi0U5xnh {\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    flex-direction: column;\n    width: 100vw;\n    height: 100vh;\n    z-index: 3;\n    background: transparent;\n}", ""]);
+exports.push([module.i, "._2alszQVyoeYm5cMi0U5xnh {\n    position: absolute;\n    top: 0;\n    left: 0;\n    z-index: 1;\n    display: flex;\n    width: 100vw;\n    height: 100vh;\n    overflow: scroll;\n}\n\n._2alszQVyoeYm5cMi0U5xnh::before {\n    content: \"Drop an audio file here.\";\n    position: absolute;\n    top: 0;\n    left: 0;\n    z-index: 0;\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    width: 100vw;\n    height: 100vh;\n    color: #4a4d54;\n    font-weight: bold;\n}", ""]);
 
 // exports
 exports.locals = {
@@ -5557,16 +5690,17 @@ exports = module.exports = __webpack_require__(0)(undefined);
 
 
 // module
-exports.push([module.i, "._1tN1uRZVCMMOD86N7qc7Ng {\n    width: 100%;\n    height: 8px;\n}\n\n._25OJAbdkACcN6zZS_sOS6N {\n    position: absolute;\n    overflow: none;\n    z-index: 1;\n    width: 100vw;\n    height: 100vh;\n    object-fit: cover;\n}\n\n._1ijSzRhuNd-1HvdBM_QNCO {\n    position: absolute;\n    top: 0;\n    left: 0;\n    z-index: -10;\n    width: 100vw;\n    height: 100vh;\n}\n\n._24mqOmDSzZQx1jgFQ-vHsu {\n    position: relative;\n    z-index: 2;\n}\n\n._3lzmpfW1miEVRfgWBuw-25 {\n    border-radius: 50%;\n    width: 10rem;\n    height: 10rem;\n    transform: scale(0);\n}\n\n._1naaXWxY9MrQtHYW9GVze7 {\n    color: white;\n    text-align: center;\n    width: 100%;\n    font-family: -apple-system, BlinkMacSystemFont;\n}", ""]);
+exports.push([module.i, "/* Layer 0  (Local)*/\n\n._24mqOmDSzZQx1jgFQ-vHsu {\n    z-index: 0;\n    contain: strict;\n    position: relative;\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    flex-direction: column;\n    flex: 0 1 100vw;\n    min-width: 400px;\n    height: 100vh;\n    overflow: hidden;\n}\n\n\n/* Layer -1 (Global) */\n\n._1ijSzRhuNd-1HvdBM_QNCO {\n    position: absolute;\n    top: 0;\n    left: 0;\n    z-index: -2;\n    width: 100vw;\n    height: 100vh;\n}\n\n\n/* Layer 0 */\n\n._3lzmpfW1miEVRfgWBuw-25 {\n    z-index: 0;\n    border-radius: 50%;\n    width: 10rem;\n    height: 10rem;\n    transform: scale(0);\n}\n\n._2tJVqNDcjg1N12i_qgvMDn {\n    display: block;\n}\n\n._2Qqzr2A3-wG1Cm6SCseAZB,\n._2DQlGK2iyvCbTcHVHtUf34 {\n    color: white;\n    font-weight: bold;\n    text-shadow: 1px 0px 2px black;\n    text-align: center;\n}\n\n._2DQlGK2iyvCbTcHVHtUf34 {\n    font-weight: 400;\n    color: rgba(255, 255, 255, .7);\n}\n\n\n/* Layer -1 */\n\n._25OJAbdkACcN6zZS_sOS6N {\n    will-change: transform, opacity;\n    z-index: -1;\n    position: absolute;\n    overflow: none;\n    width: 100vw;\n    height: 100vh;\n    object-fit: cover;\n    transform: scale(1);\n}", ""]);
 
 // exports
 exports.locals = {
-	"volumeScrubber": "_1tN1uRZVCMMOD86N7qc7Ng",
-	"bg": "_25OJAbdkACcN6zZS_sOS6N",
-	"canvas": "_1ijSzRhuNd-1HvdBM_QNCO",
 	"song": "_24mqOmDSzZQx1jgFQ-vHsu",
+	"canvas": "_1ijSzRhuNd-1HvdBM_QNCO",
 	"thumbnail": "_3lzmpfW1miEVRfgWBuw-25",
-	"name": "_1naaXWxY9MrQtHYW9GVze7"
+	"metadata": "_2tJVqNDcjg1N12i_qgvMDn",
+	"title": "_2Qqzr2A3-wG1Cm6SCseAZB",
+	"artist": "_2DQlGK2iyvCbTcHVHtUf34",
+	"bg": "_25OJAbdkACcN6zZS_sOS6N"
 };
 
 /***/ }),
@@ -7459,6 +7593,70 @@ exports.default = function (data) {
   return btoa(data.reduce(function (acc, curr) {
     return acc + String.fromCharCode(curr);
   }, ''));
+};
+
+/***/ }),
+/* 25 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+// Prepend without reconstructing the DOM tree
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+exports.default = function (node, element) {
+    typeof element === 'string' ? node.insertAdjacentHTML('afterbegin', element) : node.insertAdjacentElement('afterbegin', element);
+};
+
+/***/ }),
+/* 26 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+// Append without reconstructing the DOM tree
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+exports.default = function (node, element) {
+    typeof element === 'string' ? node.insertAdjacentHTML('beforeend', element) : node.insertAdjacentElement('beforeend', element);
+};
+
+/***/ }),
+/* 27 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+exports.default = function (type) {
+  return document.createElement(type);
+};
+
+/***/ }),
+/* 28 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+exports.default = function (element, style) {
+  return element.classList.add(style);
 };
 
 /***/ })

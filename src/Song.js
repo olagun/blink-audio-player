@@ -1,25 +1,36 @@
 'use strict';
 
 import rebound from 'rebound';
+import base64 from './utils/base64';
+import prepend from './utils/prepend';
+import append from './utils/append';
+import create from './utils/create';
+import style from './utils/style';
 
 import Dropzone from './Dropzone';
-import style from './Song.css';
-import base64 from './utils/base64';
+import styles from './Song.css';
 
-/** @protected */
-const BLUR = 60;
-const springSystem = new rebound.SpringSystem();
+let _canvas, _ctx;
 
-/** @protected */
-// Create auxillary canvas only once
-let canvas = document.createElement('canvas');;
-let ctx = canvas.getContext('2d');
-canvas.classList.add(style.canvas);
-document.body.insertAdjacentElement('afterbegin', canvas);
+Song.prototype.springSystem = new rebound.SpringSystem();
+Song.prototype.blur = 2;
+Song.prototype.brightness = 30;
+Song.prototype.quality = .7;
+Song.prototype.canvas = _canvas = document.createElement('canvas');
+Song.prototype.ctx = _ctx = _canvas.getContext('2d');
+
+style(_canvas, styles.canvas);
+prepend(document.body, _canvas);
+
+Song.prototype.resetCanvas = function() {
+    this.ctx.filter = 'none';
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+};
 
 /**
- * Song class
- * @param file Blob containing the audio information
+ * Constructor for mounting and creating song elements.
+ * 
+ * @param file Blob containing the audio information.
  * @param {Object} metadata Metadata object returned by the media module.
  * @return {HTMLElement} Song container element.
  */
@@ -29,31 +40,38 @@ function Song(file, metadata) {
     this.file = file;
     this.metadata = metadata;
 
+    console.log(metadata);
+
     this.title = this.metadata.tags.title;
+    this.artist = this.metadata.tags.artist;
     this.imageData = this.metadata.tags.picture.data;
     this.imageType = this.metadata.tags.picture.type;
 
-    this.element = document.createElement('div');
-    this.element.classList.add(style.song);
+    this.element = create('div');
+    style(this.element, styles.song);
+    append(Dropzone, this.element);
+
+    this.metaElements = [];
 
     if (this.imageData) {
         // Create and mount thumbnail
         this.thumbnail = new Image();
-        this.thumbnail.classList.add(style.thumbnail);
-        this.thumbnail.src = `data:image/${this.imageType};base64,${base64(data)}`;
-        this.element.insertAdjacentElement('afterbegin', this.thumbnail);
+        style(this.thumbnail, styles.thumbnail);
+        this.thumbnail.src = `data:image/${this.imageType};base64,${base64(this.imageData)}`;
+        prepend(this.element, this.thumbnail);
 
         // Create thumbnail spring instance
-        this.spring = springSystem.createSpring(50, 3);
-        this.spring.addListener({
-            onSpringUpdate: spring => {
+        this.thumbnailSpring = this.springSystem.createSpring(50, 3);
+        this.thumbnailSpring.addListener({
+            // Async for perf
+            onSpringUpdate: async spring => {
                 let value = spring.getCurrentValue();
                 this.thumbnail.style.transform = `scale(${value})`;
             }
         });
 
         // Immediately animate spring
-        this.spring.setEndValue(1);
+        this.thumbnailSpring.setEndValue(1);
 
         // Performantly display blurred image
         this.blurredImage = new Image();
@@ -61,23 +79,77 @@ function Song(file, metadata) {
         this.blurredImage.addEventListener('load', this._handleImageLoad.bind(this), {
             once: true
         });
+
+        // Create bg spring instance
+        this.bgSpring = this.springSystem.createSpring(2, 8);
+        this.bgSpring.addListener({
+            onSpringUpdate: async spring => {
+                let value = spring.getCurrentValue();
+                this.blurredImage.style.transform = `scale(${value})`;
+            }
+        });
+
+        // Metadata Springs
+        {
+            this.metaOpacitySpring = this.springSystem.createSpring(2, 8);
+            this.metaOpacitySpring.addListener({
+                onSpringUpdate: async spring => {
+                    for (let i = 0; i in this.metaElements; i++) {
+                        let metaElement = this.metaElements[i];
+
+                        // TODO: Delay opacity change
+                        metaElement.style.opacity = `${spring.getCurrentValue()}`;
+                    }
+                }
+            });
+
+            this.metaTransformSpring = this.springSystem.createSpring(2, 8);
+            this.metaTransformSpring.addListener({
+                onSpringUpdate: async spring => {
+                    for (let i = 0; i in this.metaElements; i++) {
+                        let metaElement = this.metaElements[i];
+
+                        // TODO: Delay transform
+                        metaElement.style.transform = `translateY(${spring.getCurrentValue()}px)`;
+                    }
+                }
+            });
+        }
     }
 
     return this.element;
 };
 /**
+ * Handle the playback asychronously as not
+ * to block any other operations or animations.
+ * 
  * @protected
  */
-Song.prototype._handlePlayback = function() {
+Song.prototype._handlePlayback = async function() {
     'use strict';
 
     if (this.audio.paused) {
         this.audio.play();
-        this.spring.setEndValue(1);
+        this.showMetadata();
+
+        this.thumbnailSpring.setEndValue(1);
+        this.bgSpring.setEndValue(1.2);
     } else {
         this.audio.pause();
-        this.spring.setEndValue(.6);
+        this.hideMetadata();
+        this.thumbnailSpring.setEndValue(.8);
+        this.bgSpring.setEndValue(1);
     }
+};
+
+Song.prototype.showMetadata = function() {
+    this.metaTransformSpring.setEndValue(0);
+    this.metaOpacitySpring.setEndValue(1);
+};
+
+Song.prototype.hideMetadata = function() {
+    this.metaTransformSpring.setEndValue(30);
+    this.metaOpacitySpring.setEndValue(0);
 };
 
 /**
@@ -90,33 +162,60 @@ Song.prototype._handlePlayback = function() {
 Song.prototype._handleImageLoad = function() {
     'use strict';
 
-    const {
-        width: canvasWidth,
-        height: canvasHeight
-    } = canvas;
+    const { width: canvasWidth, height: canvasHeight } = this.canvas;
 
-    const image = this.blurredImage,
-        scaledWidth = canvasWidth,
-        scale = scaledWidth / image.width,
-        scaledHeight = image.height * scale;
+    // Find scaled image sizes
+    const scaledWidth = canvasWidth;
+    const scale = scaledWidth / this.blurredImage.width;
+    const scaledHeight = this.blurredImage.height * scale;
 
-    ctx.filter = `blur(${BLUR}px)`;
-    ctx.drawImage(image, 0, 0, scaledWidth, scaledHeight);
+    // Blur canvas and draw image
+    this.ctx.filter = `blur(${this.blur}px) brightness(${this.brightness}%)`;
+    this.ctx.drawImage(this.blurredImage, 0, 0, scaledWidth, scaledHeight);
 
+    // Set blurredImage src
+    this.blurredImage.src = this.canvas.toDataURL('image/png', this.quality);
+    style(this.blurredImage, styles.bg);
+    this.bgSpring.setEndValue(1.2);
 
-    image.src = canvas.toDataURL('image/png');
-    image.classList.add(style.bg);
+    // Play audio
     this.audio = new Audio(URL.createObjectURL(this.file));
     this.element.addEventListener('click', this._handlePlayback.bind(this));
     this.audio.play();
 
-    Dropzone.insertAdjacentElement('afterbegin', image);
 
-    this.element.insertAdjacentHTML('beforeend', `<p class="${style.name}">${this.title}</p>`);
+    prepend(this.element, this.blurredImage);
 
-    // Reset canvas
-    ctx.filter = 'none';
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    // Create and add metadata elements
+    {
+        const meta = create('div');
+        style(meta, styles.metadata);
+
+        // TODO: Safety check
+
+        // Create title
+        const title = create('p');
+        const artist = create('p');
+
+        append(title, this.title);
+        append(artist, this.artist);
+
+        style(title, styles.title);
+        style(artist, styles.artist);
+
+        this.metaElements.push(title);
+        this.metaElements.push(artist);
+
+        append(meta, title);
+        append(meta, artist);
+
+        append(this.element, meta);
+        this.showMetadata();
+    }
+
+
+    // Perf
+    this.resetCanvas();
 };
 
 export default Song;
