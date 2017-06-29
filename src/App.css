@@ -4,9 +4,7 @@ body {
     width: 100vw;
     height: 100vh;
     margin: 0;
-    overflow: hidden;
     background-color: black;
-    transform: translate3d(0, 0, 0);
 }
 
 * {
