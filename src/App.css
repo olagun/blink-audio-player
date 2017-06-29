@@ -10,6 +10,6 @@ body {
 * {
     font-family: BlinkMacSystemFont;
     letter-spacing: .01rem;
-    -webkit-user-drag: none;
-    -webkit-user-select: none;
+    user-drag: none;
+    user-select: none;
 }
