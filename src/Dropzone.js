@@ -9,72 +9,49 @@ import Song from './Song';
 import styles from './Dropzone.css';
 
 /**
- * Audio file dropzone area.
- * @return {HTMLElement}   Song container element
+ * @class Dropzone
+ * @classdesc Audio file dropzone area.
+ * @returns {HTMLElement} Song container element
  */
-function Dropzone() {
-    'use strict';
+export default class Dropzone {
+    constructor() {
+        this.element = document.createElement('section');
+        this.element.classList.add(styles.dropzone);
 
-    this.element = create('div');
-    style(this.element, styles.dropzone);
+        this.element.addEventListener('dragover', this._handleDragOver);
+        this.element.addEventListener('drop', this._handleDrop);
 
-    this.element.addEventListener('dragover', this._handleDragOver.bind(this));
-    this.element.addEventListener('drop', this._handleDrop.bind(this));
+        return this.element;
+    }
 
-    return this.element;
-};
+    /** @param {DragEvent} e */
+    _handleDragOver(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
 
+    /** @param {DragEvent} e */
+    async _handleDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
 
-/**
- * Prevents default behavior on drag over event.
- * 
- * @param   {Object} e Drag Over Event
- */
-Dropzone.prototype._handleDragOver = function(e) {
-    'use strict';
+        const { items } = e.dataTransfer;
+        const [item, ] = items;
+        const entry = item.webkitGetAsEntry();
 
-    e.preventDefault();
-    e.stopPropagation();
+        const file = await new Promise(entry.file);
 
-    // TODO: Add shadow
-};
+        if (!(/^audio/.test(file.type))) return;
 
-/**
- * Handles audio file drop.
- * @param   {Object} e Drop Event 
- */
-Dropzone.prototype._handleDrop = async function(e) {
-    'use strict';
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    let data = e.dataTransfer.items;
-
-    if (data) {
-        let inputFile = data[0].webkitGetAsEntry();
-
-        inputFile = await new Promise((resolve, reject) => {
-            inputFile.file(file =>
-                file.type.slice(0, 5) === 'audio' ?
-                resolve(file) :
-                undefined
-            );
+        const metadata = await new Promise((resolve, reject) => {
+            read(file, { onSuccess: resolve, onError: reject });
         });
 
-        if (inputFile) {
-            read(inputFile, {
-                onSuccess: metadata => {
-                    append(this.element, (() => {
-                        const song = new Song(inputFile, metadata);
-                        Song.currentSong = song.title;
-                        Song.songList.push(song);
-                        return song.element;
-                    })());
-                }
-            });
-        }
-    }
-};
+        const song = new Song(file, metadata);
 
-export default new Dropzone;
+        Song.currentSong = song.title;
+        Song.songList.push(song);
+
+        this.element.insertAdjacentElement('beforeend', song.element);
+    }
+}

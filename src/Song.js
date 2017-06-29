@@ -16,7 +16,7 @@ Song.prototype.springSystem = new rebound.SpringSystem();
 Song.prototype.blur = 2;
 Song.prototype.brightness = 30;
 Song.prototype.quality = .7;
-Song.prototype.canvas = _canvas = new OffscreenCanvas(0, 0);
+Song.prototype.canvas = _canvas = document.createElement('canvas');
 Song.prototype.ctx = _ctx = _canvas.getContext('2d');
 
 style(_canvas, styles.canvas);
@@ -123,8 +123,6 @@ function Song(file, metadata) {
  * @protected
  */
 Song.prototype._handlePlayback = async function() {
-    'use strict';
-
     if (this.audio.paused) {
         this.audio.play();
         this.showMetadata();

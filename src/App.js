@@ -6,7 +6,7 @@ import Dropzone from './Dropzone';
 import Song from './Song';
 import './App.css';
 
-append(document.body, Dropzone);
+append(document.body, new Dropzone);
 
 const initialTitle = document.title;
 
