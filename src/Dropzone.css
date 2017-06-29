@@ -1,25 +1,24 @@
-.dropzone {
+.dropzone,
+.dropzone::before {
     position: absolute;
     top: 0;
     left: 0;
-    z-index: 1;
     display: flex;
     width: 100vw;
     height: 100vh;
+}
+
+.dropzone {
+    z-index: 1;
+    display: flex;
     overflow: scroll;
 }
 
 .dropzone::before {
     content: "Drop an audio file here.";
-    position: absolute;
-    top: 0;
-    left: 0;
     z-index: 0;
-    display: flex;
     justify-content: center;
     align-items: center;
-    width: 100vw;
-    height: 100vh;
     color: #4a4d54;
     font-weight: bold;
 }
