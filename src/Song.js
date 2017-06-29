@@ -16,12 +16,11 @@ Song.prototype.springSystem = new rebound.SpringSystem();
 Song.prototype.blur = 2;
 Song.prototype.brightness = 30;
 Song.prototype.quality = .7;
-Song.prototype.canvas = _canvas = document.createElement('canvas');
+Song.prototype.canvas = _canvas = new OffscreenCanvas(0, 0);
 Song.prototype.ctx = _ctx = _canvas.getContext('2d');
 
 style(_canvas, styles.canvas);
 prepend(document.body, _canvas);
-
 
 Song.currentSong = undefined;
 Song.songList = [];
@@ -43,8 +42,6 @@ function Song(file, metadata) {
 
     this.file = file;
     this.metadata = metadata;
-
-    console.log(metadata);
 
     this.title = this.metadata.tags.title;
     this.artist = this.metadata.tags.artist;
@@ -94,31 +91,29 @@ function Song(file, metadata) {
         });
 
         // Metadata Springs
-        {
-            this.metaOpacitySpring = this.springSystem.createSpring(2, 8);
-            this.metaOpacitySpring.addListener({
-                onSpringUpdate: async spring => {
-                    for (let i = 0; i in this.metaElements; i++) {
-                        let metaElement = this.metaElements[i];
+        this.metaOpacitySpring = this.springSystem.createSpring(2, 8);
+        this.metaOpacitySpring.addListener({
+            onSpringUpdate: async spring => {
+                for (let i = 0; i in this.metaElements; i++) {
+                    let metaElement = this.metaElements[i];
 
-                        // TODO: Delay opacity change
-                        metaElement.style.opacity = `${spring.getCurrentValue()}`;
-                    }
+                    // TODO: Delay opacity change
+                    metaElement.style.opacity = `${spring.getCurrentValue()}`;
                 }
-            });
+            }
+        });
 
-            this.metaTransformSpring = this.springSystem.createSpring(2, 8);
-            this.metaTransformSpring.addListener({
-                onSpringUpdate: async spring => {
-                    for (let i = 0; i in this.metaElements; i++) {
-                        let metaElement = this.metaElements[i];
+        this.metaTransformSpring = this.springSystem.createSpring(2, 8);
+        this.metaTransformSpring.addListener({
+            onSpringUpdate: async spring => {
+                for (let i = 0; i in this.metaElements; i++) {
+                    let metaElement = this.metaElements[i];
 
-                        // TODO: Delay transform
-                        metaElement.style.transform = `translateY(${spring.getCurrentValue()}px)`;
-                    }
+                    // TODO: Delay transform
+                    metaElement.style.transform = `translateY(${spring.getCurrentValue()}px)`;
                 }
-            });
-        }
+            }
+        });
     }
 };
 /**
@@ -188,31 +183,29 @@ Song.prototype._handleImageLoad = function() {
     prepend(this.element, this.blurredImage);
 
     // Create and add metadata elements
-    {
-        const meta = create('div');
-        style(meta, styles.metadata);
+    const meta = create('div');
+    style(meta, styles.metadata);
 
-        // TODO: Safety check
+    // TODO: Safety check
 
-        // Create title
-        const title = create('p');
-        const artist = create('p');
+    // Create title
+    const title = create('p');
+    const artist = create('p');
 
-        append(title, this.title);
-        append(artist, this.artist);
+    append(title, this.title);
+    append(artist, this.artist);
 
-        style(title, styles.title);
-        style(artist, styles.artist);
+    style(title, styles.title);
+    style(artist, styles.artist);
 
-        this.metaElements.push(title);
-        this.metaElements.push(artist);
+    this.metaElements.push(title);
+    this.metaElements.push(artist);
 
-        append(meta, title);
-        append(meta, artist);
+    append(meta, title);
+    append(meta, artist);
 
-        append(this.element, meta);
-        this.showMetadata();
-    }
+    append(this.element, meta);
+    this.showMetadata();
 
     // Perf
     this.resetCanvas();
