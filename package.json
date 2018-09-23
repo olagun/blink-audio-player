@@ -5,7 +5,7 @@
     "scripts": {
         "start": "node index",
         "dev": "./node_modules/.bin/webpack-dev-server",
-        "build": "./node_modules/.bin/webpack & ./node_modules/.bin/eslint src/*.js --fix",
+        "build": "./node_modules/.bin/webpack",
         "clean:dev": "rm -R build",
         "clean:deploy": "rm -R node_modules && npm run clean:dev"
     },

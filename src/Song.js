@@ -50,7 +50,7 @@ function Song(file, metadata) {
 
     this.element = create('div');
     style(this.element, styles.song);
-    append(Dropzone, this.element);
+    append(Dropzone.element, this.element);
 
     this.metaElements = [];
 
@@ -190,8 +190,8 @@ Song.prototype._handleImageLoad = function() {
     const title = create('p');
     const artist = create('p');
 
-    append(title, this.title);
-    append(artist, this.artist);
+    append(title, title);
+    append(artist, artist);
 
     style(title, styles.title);
     style(artist, styles.artist);

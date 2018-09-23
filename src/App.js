@@ -1,19 +1,19 @@
-'use strict';
+"use strict";
 
-import append from './utils/append';
+import append from "./utils/append";
 
-import Dropzone from './Dropzone';
-import Song from './Song';
-import './App.css';
+import Dropzone from "./Dropzone";
+import Song from "./Song";
+import "./App.css";
 
-append(document.body, new Dropzone);
+append(document.body, Dropzone.element);
 
 const initialTitle = document.title;
 
-window.addEventListener('blur', function() {
-	document.title = Song.currentSong || initialTitle;
+window.addEventListener("blur", function() {
+  document.title = Song.currentSong || initialTitle;
 });
 
-window.addEventListener('focus', function() {
-	document.title = initialTitle;
+window.addEventListener("focus", function() {
+  document.title = initialTitle;
 });
